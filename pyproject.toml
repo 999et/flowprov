@@ -1,0 +1,92 @@
+[project]
+name = "flowprov"
+version = "0.1.0"
+description = "Provenance & drift detector for n8n / BuildShip agentic workflows"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "flowprov" }]
+
+dependencies = [
+    # Web / API
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "jinja2>=3.1.4",
+    "python-multipart>=0.0.12",
+    "httpx>=0.27.2",
+
+    # DB
+    "sqlalchemy>=2.0.36",
+    "asyncpg>=0.30.0",
+    "psycopg2-binary>=2.9.10",
+    "pgvector>=0.3.6",
+    "alembic>=1.14.0",
+
+    # Validation / config
+    "pydantic>=2.9.2",
+    "pydantic-settings>=2.6.1",
+
+    # Math (used by both embedding backends)
+    "numpy>=1.26.4,<2.2",
+
+    # LLM clients (optional real mode)
+    "openai>=1.55.0",
+
+    # CLI / DX
+    "typer>=0.13.1",
+    "rich>=13.9.4",
+
+    # Misc
+    "python-dotenv>=1.0.1",
+    "structlog>=24.4.0",
+    "tenacity>=9.0.0",
+]
+
+[project.optional-dependencies]
+# Heavyweight production embedding stack (~1.5 GB on first install on CPU,
+# multi-GB if your machine has CUDA). Pulls in torch + sentence-transformers.
+# Install with: pip install -e ".[ml]"
+ml = [
+    "sentence-transformers>=3.3.1",
+]
+
+dev = [
+    "pytest>=8.3.3",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "httpx>=0.27.2",
+]
+
+[project.scripts]
+flowprov = "flowprov.cli:app"
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["flowprov*"]
+exclude = ["tests*", "examples*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+# B008: FastAPI's Depends() pattern requires call in defaults
+# E501: handled by formatter, not lint
+ignore = ["E501", "B008"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true

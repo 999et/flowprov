@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}flowprov{% endblock %}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=JetBrains+Mono:wght@400;500;700&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+
+  <style>
+    :root {
+      --bg-deep: #0a0a0b;
+      --bg-panel: #131316;
+      --bg-elev: #1a1a1e;
+      --border: #26262c;
+      --border-strong: #353540;
+      --text: #e8e6e1;
+      --text-dim: #8a8a93;
+      --text-muted: #5a5a63;
+      --accent: #d4ff5e;     /* electric chartreuse */
+      --accent-dim: #93b134;
+      --warn: #ffb547;
+      --fail: #ff5c5c;
+      --ok: #5eeb8f;
+      --serif: 'Fraunces', Georgia, serif;
+      --sans: 'Inter Tight', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      background: var(--bg-deep);
+      color: var(--text);
+      font-family: var(--sans);
+      font-feature-settings: "ss01", "cv11";
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    body {
+      background-image:
+        radial-gradient(at 8% 0%, rgba(212, 255, 94, 0.04) 0%, transparent 45%),
+        radial-gradient(at 92% 100%, rgba(212, 255, 94, 0.03) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+    a { color: var(--text); text-decoration: none; }
+    a:hover { color: var(--accent); }
+
+    .header {
+      padding: 1.8rem 3rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: baseline;
+      gap: 2rem;
+      backdrop-filter: blur(8px);
+    }
+    .logo {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      font-style: italic;
+    }
+    .logo::after {
+      content: "·";
+      color: var(--accent);
+      margin-left: 0.3rem;
+      font-style: normal;
+    }
+    .nav { display: flex; gap: 1.5rem; font-size: 0.9rem; color: var(--text-dim); }
+    .nav a { letter-spacing: 0.02em; }
+
+    .main {
+      padding: 3rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-head h2 {
+      font-family: var(--serif);
+      font-weight: 400;
+      font-size: 1.6rem;
+      letter-spacing: -0.01em;
+    }
+    .section-head .meta {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+
+    .stat {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      padding: 1.25rem 1.5rem;
+    }
+    .stat .label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+    .stat .value {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: 2.25rem;
+      letter-spacing: -0.02em;
+    }
+    .stat .value.warn { color: var(--warn); }
+    .stat .value.fail { color: var(--fail); }
+    .stat .value.ok { color: var(--accent); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    thead th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody td {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tbody tr:hover { background: rgba(212, 255, 94, 0.02); }
+    .mono { font-family: var(--mono); font-size: 0.85rem; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1px solid;
+    }
+    .badge-fail { color: var(--fail); border-color: var(--fail); background: rgba(255,92,92,0.08); }
+    .badge-warn { color: var(--warn); border-color: var(--warn); background: rgba(255,181,71,0.08); }
+    .badge-ok { color: var(--ok); border-color: var(--ok); background: rgba(94,235,143,0.08); }
+    .badge-version { color: var(--accent-dim); border-color: var(--accent-dim); background: rgba(212,255,94,0.04); }
+
+    .btn {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn:hover { background: var(--accent); color: var(--bg-deep); }
+
+    pre, code {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--text-dim);
+    }
+    pre {
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .diff-add { color: var(--ok); }
+    .diff-del { color: var(--fail); }
+    .diff-hunk { color: var(--text-muted); }
+
+    .empty {
+      padding: 3rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.1rem;
+    }
+
+    select {
+      background: var(--bg-deep);
+      color: var(--text);
+      border: 1px solid var(--border-strong);
+      padding: 0.4rem 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+    }
+
+    .breadcrumb {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .breadcrumb a { color: var(--text-dim); }
+    .breadcrumb a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">flowprov</div>
+    <nav class="nav">
+      <a href="/">flows</a>
+      <a href="/docs">api docs</a>
+      <a href="/health">health</a>
+    </nav>
+    <div style="margin-left: auto; font-family: var(--mono); font-size: 0.75rem; color: var(--text-muted);">
+      provenance · drift · replay
+    </div>
+  </header>
+
+  <main class="main">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

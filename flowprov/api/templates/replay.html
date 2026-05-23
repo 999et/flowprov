@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}flowprov · replay #{{ result.original_execution_id }}{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="/">flows</a> /
+  <a href="/flows/{{ execution.flow_id }}">{{ execution.flow_id }}</a> /
+  replay #{{ result.original_execution_id }}
+</div>
+
+<h1 style="font-family: var(--serif); font-weight: 400; font-size: 2.25rem; letter-spacing: -0.02em; margin-bottom: 0.5rem;">
+  <em>replay</em> ↔ diff
+</h1>
+<p style="color: var(--text-dim); max-width: 60ch; margin-bottom: 2rem;">
+  Original execution re-run against the chosen flow version. The cosine distance below quantifies how
+  much the output changed; the unified diff shows where.
+</p>
+
+<form method="get" style="margin-bottom: 2rem;">
+  <label class="mono" style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.75rem;">
+    replay against version
+  </label>
+  <select name="target_version_id" onchange="this.form.submit()">
+    {% for v in versions %}
+      <option value="{{ v.id }}" {% if v.version == result.replay_version %}selected{% endif %}>
+        v{{ v.version }} — {{ v.model_name }}
+      </option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="grid-3" style="margin-bottom: 2rem;">
+  <div class="stat">
+    <div class="label">cosine distance</div>
+    <div class="value {% if result.cosine_distance > 0.4 %}fail{% elif result.cosine_distance > 0.15 %}warn{% else %}ok{% endif %}">
+      {{ "%.3f"|format(result.cosine_distance) }}
+    </div>
+  </div>
+  <div class="stat">
+    <div class="label">original version</div>
+    <div class="value">v{{ result.original_version }}</div>
+  </div>
+  <div class="stat">
+    <div class="label">replay version</div>
+    <div class="value">v{{ result.replay_version }}</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="mono" style="color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem;">
+      original output — v{{ result.original_version }}
+    </div>
+    <pre>{{ result.original_output }}</pre>
+  </div>
+
+  <div class="panel">
+    <div class="mono" style="color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem;">
+      replay output — v{{ result.replay_version }}
+    </div>
+    <pre>{{ result.replay_output }}</pre>
+  </div>
+</div>
+
+<section style="margin-top: 2rem;">
+  <div class="section-head">
+    <h2>unified diff</h2>
+    <span class="meta">original ↔ replay</span>
+  </div>
+  <pre>{% for line in result.diff_summary.splitlines() -%}
+{% if line.startswith('+') and not line.startswith('+++') %}<span class="diff-add">{{ line }}</span>
+{% elif line.startswith('-') and not line.startswith('---') %}<span class="diff-del">{{ line }}</span>
+{% elif line.startswith('@@') %}<span class="diff-hunk">{{ line }}</span>
+{% else %}{{ line }}
+{% endif %}
+{%- endfor %}</pre>
+</section>
+
+<section style="margin-top: 2rem;">
+  <div class="section-head">
+    <h2>input payload</h2>
+    <span class="meta">canonical hash: {{ execution.input_hash[:12] }}</span>
+  </div>
+  <pre>{{ execution.input_json | tojson(indent=2) }}</pre>
+</section>
+
+{% endblock %}

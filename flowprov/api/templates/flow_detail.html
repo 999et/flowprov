@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}flowprov · {{ flow_id }}{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="/">flows</a> / {{ flow_id }}
+</div>
+
+<h1 style="font-family: var(--serif); font-weight: 400; font-size: 2.5rem; letter-spacing: -0.02em; margin-bottom: 2rem;">
+  <span class="mono" style="font-family: var(--mono); font-size: 0.6em; color: var(--text-muted);">flow</span>
+  {{ flow_id }}
+</h1>
+
+<section>
+  <div class="section-head">
+    <h2>versions</h2>
+    <span class="meta">{{ versions | length }} total · prompt / model fingerprint</span>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>v</th>
+        <th>model</th>
+        <th>temp</th>
+        <th>prompt</th>
+        <th>created</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in versions %}
+      <tr>
+        <td><span class="badge badge-version">v{{ v.version }}</span></td>
+        <td class="mono">{{ v.model_name }}</td>
+        <td class="mono">{{ v.temperature }}</td>
+        <td>
+          <pre style="max-height: 140px; overflow: auto;">{{ v.prompt_template }}</pre>
+        </td>
+        <td class="mono" style="color: var(--text-muted);">{{ v.created_at.strftime('%H:%M:%S') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% if drift %}
+<section style="margin-top: 3rem;">
+  <div class="section-head">
+    <h2>drift events</h2>
+    <span class="meta">{{ drift | length }} on this flow</span>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>when</th>
+        <th>severity</th>
+        <th>distance</th>
+        <th>baseline (μ ± σ, n)</th>
+        <th>explanation</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in drift %}
+      <tr>
+        <td class="mono" style="color: var(--text-muted);">{{ d.ts.strftime('%H:%M:%S') }}</td>
+        <td><span class="badge badge-{{ d.severity }}">{{ d.severity }}</span></td>
+        <td class="mono">{{ "%.3f"|format(d.distance) }}</td>
+        <td class="mono" style="color: var(--text-dim);">
+          {% if d.baseline_mean is not none %}
+            μ={{ "%.3f"|format(d.baseline_mean) }}
+            {% if d.baseline_std is not none %} σ={{ "%.3f"|format(d.baseline_std) }}{% endif %}
+            n={{ d.baseline_n }}
+          {% else %}—{% endif %}
+        </td>
+        <td style="color: var(--text-dim); max-width: 40ch;">{{ d.explanation }}</td>
+        <td><a class="btn" href="/executions/{{ d.execution_id }}/replay">replay</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+<section style="margin-top: 3rem;">
+  <div class="section-head">
+    <h2>recent executions</h2>
+    <span class="meta">{{ executions | length }} most recent</span>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>when</th>
+        <th>node</th>
+        <th>v</th>
+        <th>input hash</th>
+        <th>output (truncated)</th>
+        <th>latency</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in executions %}
+      <tr>
+        <td class="mono" style="color: var(--text-muted);">{{ e.ts.strftime('%H:%M:%S.%f') | truncate(12, true, '') }}</td>
+        <td class="mono">{{ e.node_id }}</td>
+        <td><span class="badge badge-version">v?</span></td>
+        <td class="mono" style="color: var(--text-muted);">{{ e.input_hash[:12] }}</td>
+        <td style="max-width: 50ch; color: var(--text-dim);">{{ e.output_text | truncate(120, true, '…') }}</td>
+        <td class="mono">{{ e.latency_ms or '—' }}{% if e.latency_ms %}ms{% endif %}</td>
+        <td><a class="btn" href="/executions/{{ e.id }}/replay">replay</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% endblock %}

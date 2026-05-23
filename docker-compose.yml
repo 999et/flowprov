@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: flowprov-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: flowprov
+      POSTGRES_PASSWORD: flowprov_dev_pw
+      POSTGRES_DB: flowprov
+    ports:
+      - "5433:5432"
+    volumes:
+      - flowprov_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flowprov -d flowprov"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  # Optional: real n8n for the "production wiring" step.
+  # Bring it up with:  docker compose --profile n8n up -d
+  n8n:
+    profiles: ["n8n"]
+    image: n8nio/n8n:latest
+    container_name: flowprov-n8n
+    restart: unless-stopped
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://localhost:5678/
+      N8N_SECURE_COOKIE: "false"
+      N8N_RUNNERS_ENABLED: "true"
+      GENERIC_TIMEZONE: Asia/Kuala_Lumpur
+    ports:
+      - "5678:5678"
+    volumes:
+      - flowprov_n8ndata:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  flowprov_pgdata:
+  flowprov_n8ndata:

@@ -1,0 +1,69 @@
+{
+  "name": "HackerOne triage (with flowprov sidecar)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "triage",
+        "responseMode": "lastNode"
+      },
+      "id": "0a000000-0000-0000-0000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 320]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {"temperature": 0.0},
+        "messages": {
+          "values": [
+            {
+              "role": "user",
+              "content": "=You are a senior security analyst. Triage this HackerOne report.\n\nReport title: {{ $json.title }}\nReport body: {{ $json.body }}\nAffected asset: {{ $json.asset }}\n\nOutput: severity (P0-P3), likely component, recommended owner."
+            }
+          ]
+        }
+      },
+      "id": "0a000000-0000-0000-0000-000000000002",
+      "name": "OpenAI Chat",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [520, 320]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/api/ingest",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"flow_id\": \"security.hackerone.triage\",\n  \"flow_name\": \"HackerOne Report Triage\",\n  \"node_id\": \"llm.triage\",\n  \"prompt_template\": \"You are a senior security analyst. Triage this HackerOne report.\\n\\nReport title: {title}\\nReport body: {body}\\nAffected asset: {asset}\\n\\nOutput: severity (P0-P3), likely component, recommended owner.\",\n  \"model_name\": \"gpt-4o-mini\",\n  \"model_provider\": \"openai\",\n  \"temperature\": 0.0,\n  \"input_json\": {{ JSON.stringify($('Webhook').item.json) }},\n  \"output_text\": {{ JSON.stringify($json.message.content) }},\n  \"latency_ms\": 0,\n  \"token_usage_json\": {{ JSON.stringify($json.usage || {}) }}\n}",
+        "options": {
+          "retry": {"maxRetries": 2}
+        }
+      },
+      "id": "0a000000-0000-0000-0000-000000000003",
+      "name": "flowprov-ingest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [820, 320]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [{"node": "OpenAI Chat", "type": "main", "index": 0}]
+      ]
+    },
+    "OpenAI Chat": {
+      "main": [
+        [{"node": "flowprov-ingest", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {"executionOrder": "v1"},
+  "versionId": "01000000-0000-0000-0000-000000000001",
+  "meta": {"templateCredsSetupCompleted": true}
+}
