@@ -15,15 +15,14 @@ The system itself runs as either (a) a sidecar HTTP service that your n8n nodes 
 ## Table of contents
 
 1. [Why this exists](#why-this-exists)
-2. [Architecture](#architecture)
-3. [Quick start (Debian 13, ~10 minutes)](#quick-start-debian-13-10-minutes)
-4. [Expected output](#expected-output)
-5. [How it works](#how-it-works)
-6. [Wiring your own n8n flows](#wiring-your-own-n8n-flows)
-7. [Tuning drift detection](#tuning-drift-detection)
-8. [Project layout](#project-layout)
-9. [Migrating from local Postgres to Supabase](#migrating-from-local-postgres-to-supabase)
-10. [Troubleshooting](#troubleshooting)
+2. [Quick start](#quick-start)
+3. [Expected output](#expected-output)
+4. [How it works](#how-it-works)
+5. [Wiring your own n8n flows](#wiring-your-own-n8n-flows)
+6. [Tuning drift detection](#tuning-drift-detection)
+7. [Project layout](#project-layout)
+8. [Migrating from local Postgres to Supabase](#migrating-from-local-postgres-to-supabase)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -32,45 +31,6 @@ The system itself runs as either (a) a sidecar HTTP service that your n8n nodes 
 When you move business logic out of code and into low-code orchestration with embedded LLM nodes, you trade one class of risk (refactor regressions caught by unit tests) for a worse one: **silent stochastic drift**. Someone "improves" a prompt; a model auto-upgrades on the provider side; an upstream input distribution shifts. Three weeks later, ops notices something is off, and you spend a day reconstructing what changed.
 
 `flowprov` is the unit-test substitute for the stochastic layer.
-
----
-
-## Architecture
-
-```
-        ┌──────────────────────────────────────────────────┐
-        │  n8n / BuildShip / your own agent harness        │
-        │                                                  │
-        │   webhook ─► [LLM node] ─► [downstream logic]    │
-        │                  │                               │
-        │                  └─► [HTTP: POST /api/ingest] ◄─┐│
-        └──────────────────────────────────────────────────┘
-                                                          │
-                                                          ▼
-┌──────────────────────────────────────────────────────────────────┐
-│  flowprov                                                        │
-│  ┌────────────┐  ┌──────────────┐  ┌────────────┐  ┌──────────┐  │
-│  │ FastAPI    │→ │ Provenance   │→ │ Embedder   │→ │ Drift    │  │
-│  │ /api/      │  │ service      │  │ (MiniLM)   │  │ engine   │  │
-│  └────────────┘  └──────────────┘  └────────────┘  └──────────┘  │
-│         │              │                  │             │        │
-│         └──────────────┴──────────────────┴─────────────┘        │
-│                              │                                   │
-│                              ▼                                   │
-│              ┌───────────────────────────────┐                   │
-│              │ Postgres + pgvector           │                   │
-│              │  - flows, flow_versions       │                   │
-│              │  - executions(input_hash,     │                   │
-│              │    output_embedding vector)   │                   │
-│              │  - drift_events               │                   │
-│              └───────────────────────────────┘                   │
-│                              │                                   │
-│                              ▼                                   │
-│              ┌───────────────────────────────┐                   │
-│              │ HTMX dashboard + replay UI    │                   │
-│              └───────────────────────────────┘                   │
-└──────────────────────────────────────────────────────────────────┘
-```
 
 The two core insights:
 
