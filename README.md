@@ -20,9 +20,8 @@ The system itself runs as either (a) a sidecar HTTP service that your n8n nodes 
 4. [How it works](#how-it-works)
 5. [Wiring your own n8n flows](#wiring-your-own-n8n-flows)
 6. [Tuning drift detection](#tuning-drift-detection)
-7. [Project layout](#project-layout)
-8. [Migrating from local Postgres to Supabase](#migrating-from-local-postgres-to-supabase)
-9. [Troubleshooting](#troubleshooting)
+7. [Migrating from local Postgres to Supabase](#migrating-from-local-postgres-to-supabase)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -297,72 +296,6 @@ Tuning playbook:
 | missing real drift                 | lower `DRIFT_HARD_THRESHOLD` (e.g. 0.30)          |
 | warns firing on fresh classes      | raise `DRIFT_MIN_HISTORY` (e.g. 10)               |
 | latency on huge tables             | rebuild IVFFlat with more lists (200 → 1000)      |
-
----
-
-## Project layout
-
-```
-flowprov/
-├── alembic.ini                          Alembic configuration
-├── docker-compose.yml                   Postgres + pgvector (+ optional n8n)
-├── Makefile                             one-liner ops
-├── pyproject.toml                       package + deps
-├── README.md                            you are here
-├── .env.example                         template; copy to .env
-│
-├── flowprov/                            the application
-│   ├── __init__.py
-│   ├── config.py                        pydantic-settings (reads .env)
-│   ├── db.py                            async SQLAlchemy engine + session
-│   ├── models.py                        ORM models (matches migration 001)
-│   ├── schemas.py                       pydantic v2 request/response schemas
-│   ├── embeddings.py                    sentence-transformers + canonical hash
-│   ├── llm.py                           fake + openai LLM clients
-│   ├── drift.py                         two-tier drift detection engine
-│   ├── service.py                       provenance ingest service
-│   ├── replay.py                        execution replay service
-│   ├── notify.py                        optional Slack webhook
-│   ├── cli.py                           typer CLI (`flowprov health`, `flowprov flows`)
-│   └── api/
-│       ├── __init__.py
-│       ├── app.py                       FastAPI factory + lifespan
-│       ├── routes_ingest.py             /api/ingest, /api/replay, /api/drift
-│       ├── routes_dashboard.py          /, /flows/{id}, /executions/{id}/replay
-│       ├── static/                      (served at /static)
-│       └── templates/
-│           ├── base.html
-│           ├── index.html
-│           ├── flow_detail.html
-│           └── replay.html
-│
-├── migrations/
-│   ├── env.py
-│   ├── script.py.mako
-│   └── versions/
-│       └── 001_initial_schema.py
-│
-├── examples/
-│   ├── __init__.py
-│   ├── flow_simulator/                  the demo runner
-│   │   ├── __init__.py
-│   │   ├── flows.py                     5 realistic flow definitions
-│   │   ├── run.py                       `make demo`
-│   │   └── inject_drift.py              `make demo-drift`
-│   └── n8n_workflows/
-│       ├── README.md                    wiring guide
-│       └── 01_triage.json               importable n8n workflow
-│
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py
-│   ├── test_embeddings.py               unit tests, no DB
-│   ├── test_llm.py                      unit tests, no DB
-│   └── test_service.py                  integration tests, needs DB
-│
-└── scripts/
-    └── bootstrap.sh                     one-shot bootstrap
-```
 
 ---
 
