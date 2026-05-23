@@ -39,7 +39,7 @@ The two core insights:
 
 ---
 
-## Quick start (Debian 13, ~10 minutes)
+## Quick start 
 
 ### Prerequisites
 
